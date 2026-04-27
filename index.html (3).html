@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multimodal Data Mining — When AI Learns to See, Hear & Read</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── CSS Variables ─── */
+    :root {
+      --ink: #1a1612;
+      --paper: #faf8f4;
+      --cream: #f3efe6;
+      --warm-mid: #e8e1d3;
+      --accent: #c8602a;
+      --accent-light: #e8845a;
+      --accent-pale: #f9ece4;
+      --teal: #2a7c7c;
+      --teal-light: #4aa8a8;
+      --teal-pale: #e4f4f4;
+      --gold: #b8921a;
+      --gold-pale: #fdf4dc;
+      --muted: #7a6f62;
+      --border: #d8d0c4;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    /* ─── Noise texture overlay ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.028;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ─── Top ribbon ─── */
+    .ribbon {
+      background: var(--ink);
+      color: var(--paper);
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      padding: 8px 20px;
+      text-transform: uppercase;
+    }
+
+    /* ─── Header / Hero ─── */
+    .hero {
+      position: relative;
+      padding: 80px 20px 60px;
+      text-align: center;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-bg-lines {
+      position: absolute;
+      inset: 0;
+      opacity: 0.06;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, var(--ink) 39px, var(--ink) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 79px, var(--ink) 79px, var(--ink) 80px);
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 4px 14px;
+      border-radius: 2px;
+      margin-bottom: 28px;
+      animation: fadeUp 0.8s ease both;
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 7vw, 5.2rem);
+      font-weight: 300;
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+      max-width: 820px;
+      margin: 0 auto 24px;
+      animation: fadeUp 0.9s 0.1s ease both;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 17px;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 36px;
+      font-weight: 300;
+      animation: fadeUp 0.9s 0.2s ease both;
+    }
+
+    .hero-meta {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      animation: fadeUp 0.9s 0.3s ease both;
+    }
+
+    .hero-meta span { display: flex; align-items: center; gap: 6px; }
+    .hero-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border); }
+
+    /* ─── Stats Bar ─── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--cream);
+    }
+
+    .stat-item {
+      padding: 28px 24px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 2.6rem;
+      font-weight: 300;
+      color: var(--accent);
+      line-height: 1;
+      display: block;
+    }
+
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 6px;
+      display: block;
+    }
+
+    /* ─── Main Layout ─── */
+    .main-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ─── Section Markers ─── */
+    .part-marker {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 72px 0 32px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .part-num {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .part-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--border) 100%);
+    }
+
+    /* ─── Headings ─── */
+    h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 400;
+      line-height: 1.2;
+      margin-bottom: 24px;
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 500;
+      margin: 40px 0 14px;
+    }
+
+    p { margin-bottom: 20px; }
+
+    strong { font-weight: 500; color: var(--ink); }
+
+    /* ─── Lead paragraph ─── */
+    .lead {
+      font-size: 1.12rem;
+      color: #3a342c;
+      font-weight: 300;
+      line-height: 1.85;
+      border-left: 3px solid var(--accent);
+      padding-left: 20px;
+      margin-bottom: 32px;
+    }
+
+    /* ─── Callout boxes ─── */
+    .callout {
+      border-radius: 6px;
+      padding: 22px 26px;
+      margin: 32px 0;
+      position: relative;
+    }
+    .callout-teal { background: var(--teal-pale); border-left: 4px solid var(--teal); }
+    .callout-gold { background: var(--gold-pale); border-left: 4px solid var(--gold); }
+    .callout-accent { background: var(--accent-pale); border-left: 4px solid var(--accent); }
+
+    .callout-label {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    /* ─── Architecture Diagram ─── */
+    .diagram-wrap {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 36px 24px;
+      margin: 36px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    /* ─── Modality Cards ─── */
+    .modality-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin: 32px 0;
+    }
+
+    .modality-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 22px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .modality-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.09);
+    }
+
+    .modality-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .card-text::before { background: var(--accent); }
+    .card-image::before { background: var(--teal); }
+    .card-audio::before { background: var(--gold); }
+    .card-video::before { background: #7c2a6a; }
+    .card-graph::before { background: #2a5c7c; }
+    .card-tabular::before { background: #3a7c2a; }
+
+    .modality-icon {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .modality-name {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .modality-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ─── Pipeline / Architecture SVG container ─── */
+    .arch-svg-wrap {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px 16px;
+      margin: 36px 0;
+      overflow-x: auto;
+    }
+
+    .arch-svg-wrap svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+
+    /* ─── Fusion Strategies ─── */
+    .fusion-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 28px 0;
+    }
+
+    .fusion-cell {
+      background: white;
+      padding: 24px 20px;
+    }
+
+    .fusion-num {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .fusion-title {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .fusion-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ─── Use Cases ─── */
+    .usecase-list {
+      list-style: none;
+      margin: 24px 0;
+    }
+
+    .usecase-list li {
+      display: flex;
+      gap: 16px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+
+    .usecase-list li:last-child { border-bottom: none; }
+
+    .usecase-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .uc-medical { background: #ffe4e4; }
+    .uc-finance { background: #e4f4e4; }
+    .uc-media { background: #e4eeff; }
+    .uc-science { background: var(--gold-pale); }
+    .uc-auto { background: var(--teal-pale); }
+
+    .usecase-body strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .usecase-body p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ─── Challenges / Best Practices grid ─── */
+    .bp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 28px 0;
+    }
+
+    .bp-card {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 18px;
+    }
+
+    .bp-card .bp-icon { font-size: 1.4rem; margin-bottom: 10px; display: block; }
+    .bp-card .bp-title { font-family: var(--font-display); font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+    .bp-card .bp-text { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ─── Future / Trends row ─── */
+    .trends-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 28px 0;
+    }
+
+    .trend-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 18px;
+      background: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .trend-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--teal));
+    }
+
+    .trend-icon { font-size: 1.5rem; margin-bottom: 10px; display: block; }
+    .trend-title { font-family: var(--font-display); font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+    .trend-text { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ─── Summary / takeaways ─── */
+    .takeaway-list {
+      list-style: none;
+      margin: 24px 0;
+      counter-reset: takeaway;
+    }
+
+    .takeaway-list li {
+      display: flex;
+      gap: 18px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      counter-increment: takeaway;
+      align-items: flex-start;
+    }
+
+    .takeaway-list li:last-child { border-bottom: none; }
+
+    .takeaway-num {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--accent);
+      line-height: 1;
+      flex-shrink: 0;
+      width: 36px;
+    }
+
+    .takeaway-text { font-size: 15px; color: #3a342c; line-height: 1.7; }
+
+    /* ─── Pull quote ─── */
+    .pull-quote {
+      text-align: center;
+      padding: 48px 24px;
+      margin: 48px 0;
+      position: relative;
+    }
+
+    .pull-quote::before, .pull-quote::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .pull-quote::before { top: 0; }
+    .pull-quote::after { bottom: 0; }
+
+    .pull-quote p {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 3.5vw, 2rem);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--ink);
+      line-height: 1.45;
+      margin: 0;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .pull-quote cite {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 20px;
+      font-style: normal;
+    }
+
+    /* ─── Footer ─── */
+    .footer {
+      background: var(--ink);
+      color: var(--paper);
+      padding: 52px 24px;
+      text-align: center;
+      margin-top: 80px;
+    }
+
+    .footer-title {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 300;
+      margin-bottom: 8px;
+    }
+
+    .footer-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: #8a7f72;
+      margin-top: 6px;
+    }
+
+    /* ─── Animations ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ─── Reading progress bar ─── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--teal));
+      width: 0%;
+      z-index: 9998;
+      transition: width 0.1s linear;
+    }
+
+    /* ─── TOC ─── */
+    .toc-wrap {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin: 48px 0;
+    }
+
+    .toc-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 32px;
+    }
+
+    .toc-list a {
+      text-decoration: none;
+      color: var(--ink);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--border);
+      transition: color 0.2s;
+    }
+
+    .toc-list a:hover { color: var(--accent); }
+
+    .toc-list a::before {
+      content: attr(data-n);
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 600px) {
+      .stats-bar { grid-template-columns: 1fr; }
+      .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+      .fusion-grid { grid-template-columns: 1fr; }
+      .bp-grid { grid-template-columns: 1fr; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- Top ribbon -->
+<div class="ribbon">Data Warehousing & Mining · April 2026 · Vol. II</div>
+
+<!-- ─── HERO ─── -->
+<header class="hero">
+  <div class="hero-bg-lines"></div>
+  <div class="hero-tag">Research · Deep Dive</div>
+  <h1>Multimodal<br>Data <em>Mining</em></h1>
+  <p class="hero-sub">When AI learns to see, hear, read, and reason — all at once. A comprehensive exploration of mining intelligence from multiple data types simultaneously.</p>
+  <div class="hero-meta">
+    <span>Your Name</span>
+    <span class="dot"></span>
+    <span>Data Warehousing & Mining</span>
+    <span class="dot"></span>
+    <span>April 2026</span>
+    <span class="dot"></span>
+    <span>~14 min read</span>
+  </div>
+</header>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <span class="stat-num">6+</span>
+    <span class="stat-label">Modality types mined simultaneously</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num">3×</span>
+    <span class="stat-label">Better accuracy than unimodal systems</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num">∞</span>
+    <span class="stat-label">Real-world domains it transforms</span>
+  </div>
+</div>
+
+<!-- ─── MAIN CONTENT ─── -->
+<main class="main-wrap">
+
+  <!-- Table of Contents -->
+  <div class="toc-wrap reveal">
+    <div class="toc-label">Contents</div>
+    <ul class="toc-list">
+      <li><a href="#intro" data-n="01">What is Multimodal Data Mining?</a></li>
+      <li><a href="#modalities" data-n="02">The Six Modalities</a></li>
+      <li><a href="#architecture" data-n="03">System Architecture</a></li>
+      <li><a href="#fusion" data-n="04">Fusion Strategies</a></li>
+      <li><a href="#pipeline" data-n="05">End-to-End Pipeline</a></li>
+      <li><a href="#usecases" data-n="06">Real-World Use Cases</a></li>
+      <li><a href="#challenges" data-n="07">Challenges</a></li>
+      <li><a href="#future" data-n="08">The Future</a></li>
+      <li><a href="#numerical" data-n="09">Cosine Similarity Example</a></li>
+    </ul>
+  </div>
+
+  <!-- PART 01: INTRODUCTION -->
+  <div class="part-marker reveal"><span class="part-num">Part 01</span><div class="part-line"></div></div>
+
+  <section id="intro">
+    <h2>The Reliability Gap in Single-Modality Systems</h2>
+    <p class="lead">Human beings don't understand the world through a single sense. A doctor examining a patient reads the chart, listens to symptoms, examines imaging scans, and interprets lab values — all simultaneously. Yet for decades, machine learning systems were forced to reason from a single data type. Multimodal Data Mining changes that.</p>
+
+    <p>Traditional data mining operates on structured tables, sequences, or single-type corpora. It has produced tremendous value — market segmentation, fraud detection, recommendation systems. But the world's most meaningful information lives at the <strong>intersection of modalities</strong>: a tweet's sentiment depends on the attached image; a medical diagnosis depends on radiology scans and clinical notes together; a surveillance alert depends on video, audio, and timestamped event logs.</p>
+
+    <p><strong>Multimodal Data Mining</strong> is the discipline of discovering patterns, relationships, and predictive signals from <em>multiple heterogeneous data types</em> — text, images, audio, video, graphs, and tabular data — processed and fused within a unified analytical framework. It is, in essence, teaching machines to reason the way humans do: by integrating evidence from all available senses.</p>
+
+    <div class="callout callout-accent">
+      <div class="callout-label">Key Definition</div>
+      <p style="margin:0;font-size:15px;"><strong>Multimodal Data Mining</strong> is the process of extracting novel and useful knowledge from datasets that contain two or more types of information (modalities) — where the fusion of these modalities yields insights impossible to obtain from any single source alone.</p>
+    </div>
+
+    <p>The field sits at the convergence of three major research streams: <strong>data mining</strong> (pattern discovery at scale), <strong>machine learning</strong> (representation learning and model training), and <strong>signal processing</strong> (handling raw sensory data). Its applications span medicine, finance, autonomous systems, media intelligence, and scientific discovery.</p>
+  </section>
+
+  <!-- PART 02: MODALITIES -->
+  <div class="part-marker reveal"><span class="part-num">Part 02</span><div class="part-line"></div></div>
+
+  <section id="modalities">
+    <h2>The Six Modalities — What We Mine</h2>
+    <p>Multimodal systems operate across fundamentally different types of information, each with unique structure, dimensionality, and extraction challenges.</p>
+
+    <div class="modality-grid">
+      <div class="modality-card card-text">
+        <span class="modality-icon">📝</span>
+        <div class="modality-name">Text</div>
+        <div class="modality-desc">Documents, reports, social posts, clinical notes. Mined with transformers (BERT, GPT), NER, sentiment analysis, topic modeling.</div>
+      </div>
+      <div class="modality-card card-image">
+        <span class="modality-icon">🖼️</span>
+        <div class="modality-name">Images</div>
+        <div class="modality-desc">Medical scans, satellite imagery, product photos. Mined with CNNs, ViTs, object detection, segmentation networks.</div>
+      </div>
+      <div class="modality-card card-audio">
+        <span class="modality-icon">🎵</span>
+        <div class="modality-name">Audio</div>
+        <div class="modality-desc">Speech, environmental sounds, biosignals. Features via spectrograms, MFCCs, wav2vec, and audio transformers.</div>
+      </div>
+      <div class="modality-card card-video">
+        <span class="modality-icon">🎞️</span>
+        <div class="modality-name">Video</div>
+        <div class="modality-desc">Temporal sequences of frames + audio. Models: 3D CNNs, TimeSformer, VideoMAE for action recognition.</div>
+      </div>
+      <div class="modality-card card-graph">
+        <span class="modality-icon">🕸️</span>
+        <div class="modality-name">Graphs</div>
+        <div class="modality-desc">Social networks, knowledge graphs, molecular structures. Mined with GNNs, GraphSAGE, and link prediction.</div>
+      </div>
+      <div class="modality-card card-tabular">
+        <span class="modality-icon">📊</span>
+        <div class="modality-name">Tabular</div>
+        <div class="modality-desc">Structured EHR, sensor logs, financial transactions. Processed with gradient boosting, TabNet, and feature engineering.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-teal">
+      <div class="callout-label">Why Multiple Modalities?</div>
+      <p style="margin:0;font-size:15px;">Each modality captures a different aspect of reality. Text captures intent and semantics. Images capture spatial structure. Audio captures temporal dynamics. No single modality tells the complete story — and the <strong>correlation between modalities</strong> is itself a rich source of mined knowledge.</p>
+    </div>
+  </section>
+
+  <!-- PART 03: ARCHITECTURE DIAGRAM -->
+  <div class="part-marker reveal"><span class="part-num">Part 03</span><div class="part-line"></div></div>
+
+  <section id="architecture">
+    <h2>System Architecture — The Full Stack</h2>
+    <p>A production-grade multimodal mining system is not a monolith — it is a carefully layered stack of specialised encoders, a fusion engine, a task decoder, and a continuous monitoring loop.</p>
+
+    <!-- ARCHITECTURE DIAGRAM (SVG) -->
+    <div class="arch-svg-wrap reveal">
+      <div class="diagram-title">— Multimodal Data Mining · System Architecture —</div>
+      <svg viewBox="0 0 780 520" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#c8602a"/>
+          </marker>
+          <marker id="arr-teal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#2a7c7c"/>
+          </marker>
+          <linearGradient id="gAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#c8602a"/>
+            <stop offset="100%" stop-color="#e8845a"/>
+          </linearGradient>
+          <linearGradient id="gTeal" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#2a7c7c"/>
+            <stop offset="100%" stop-color="#4aa8a8"/>
+          </linearGradient>
+          <linearGradient id="gGold" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#b8921a"/>
+            <stop offset="100%" stop-color="#d4b050"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Background layer labels -->
+        <rect x="10" y="10" width="760" height="500" rx="10" fill="#faf8f4" stroke="#d8d0c4" stroke-width="1"/>
+
+        <!-- Layer 1: Input Sources -->
+        <rect x="30" y="30" width="720" height="80" rx="6" fill="#f3efe6" stroke="#d8d0c4" stroke-width="0.5"/>
+        <text x="50" y="55" font-size="9" fill="#7a6f62" letter-spacing="2" font-family="'Space Mono',monospace">LAYER 1 · INPUT SOURCES</text>
+
+        <!-- Input boxes -->
+        <rect x="42" y="60" width="88" height="32" rx="4" fill="url(#gAccent)"/>
+        <text x="86" y="80" font-size="11" fill="white" text-anchor="middle" font-weight="500">📝 Text</text>
+
+        <rect x="140" y="60" width="88" height="32" rx="4" fill="#4aa8a8"/>
+        <text x="184" y="80" font-size="11" fill="white" text-anchor="middle" font-weight="500">🖼️ Images</text>
+
+        <rect x="238" y="60" width="88" height="32" rx="4" fill="#b8921a"/>
+        <text x="282" y="80" font-size="11" fill="white" text-anchor="middle" font-weight="500">🎵 Audio</text>
+
+        <rect x="336" y="60" width="88" height="32" rx="4" fill="#7c2a6a"/>
+        <text x="380" y="80" font-size="11" fill="white" text-anchor="middle" font-weight="500">🎞️ Video</text>
+
+        <rect x="434" y="60" width="88" height="32" rx="4" fill="#2a5c7c"/>
+        <text x="478" y="80" font-size="11" fill="white" text-anchor="middle" font-weight="500">🕸️ Graph</text>
+
+        <rect x="532" y="60" width="98" height="32" rx="4" fill="#3a7c2a"/>
+        <text x="581" y="80" font-size="11" fill="white" text-anchor="middle" font-weight="500">📊 Tabular</text>
+
+        <!-- Layer 2: Encoders -->
+        <rect x="30" y="130" width="720" height="90" rx="6" fill="#fff8f5" stroke="#d8d0c4" stroke-width="0.5"/>
+        <text x="50" y="152" font-size="9" fill="#7a6f62" letter-spacing="2" font-family="'Space Mono',monospace">LAYER 2 · MODALITY-SPECIFIC ENCODERS</text>
+
+        <rect x="42" y="160" width="88" height="44" rx="4" fill="white" stroke="#c8602a" stroke-width="1.2"/>
+        <text x="86" y="178" font-size="10" fill="#c8602a" text-anchor="middle" font-weight="500">BERT</text>
+        <text x="86" y="194" font-size="9" fill="#7a6f62" text-anchor="middle">RoBERTa</text>
+
+        <rect x="140" y="160" width="88" height="44" rx="4" fill="white" stroke="#4aa8a8" stroke-width="1.2"/>
+        <text x="184" y="178" font-size="10" fill="#2a7c7c" text-anchor="middle" font-weight="500">ViT / CNN</text>
+        <text x="184" y="194" font-size="9" fill="#7a6f62" text-anchor="middle">ResNet-50</text>
+
+        <rect x="238" y="160" width="88" height="44" rx="4" fill="white" stroke="#b8921a" stroke-width="1.2"/>
+        <text x="282" y="178" font-size="10" fill="#b8921a" text-anchor="middle" font-weight="500">wav2vec</text>
+        <text x="282" y="194" font-size="9" fill="#7a6f62" text-anchor="middle">Whisper</text>
+
+        <rect x="336" y="160" width="88" height="44" rx="4" fill="white" stroke="#7c2a6a" stroke-width="1.2"/>
+        <text x="380" y="178" font-size="10" fill="#7c2a6a" text-anchor="middle" font-weight="500">3D-CNN</text>
+        <text x="380" y="194" font-size="9" fill="#7a6f62" text-anchor="middle">TimeSformer</text>
+
+        <rect x="434" y="160" width="88" height="44" rx="4" fill="white" stroke="#2a5c7c" stroke-width="1.2"/>
+        <text x="478" y="178" font-size="10" fill="#2a5c7c" text-anchor="middle" font-weight="500">GNN</text>
+        <text x="478" y="194" font-size="9" fill="#7a6f62" text-anchor="middle">GraphSAGE</text>
+
+        <rect x="532" y="160" width="98" height="44" rx="4" fill="white" stroke="#3a7c2a" stroke-width="1.2"/>
+        <text x="581" y="178" font-size="10" fill="#3a7c2a" text-anchor="middle" font-weight="500">XGBoost</text>
+        <text x="581" y="194" font-size="9" fill="#7a6f62" text-anchor="middle">TabNet</text>
+
+        <!-- Arrows: Input → Encoders -->
+        <line x1="86" y1="92" x2="86" y2="158" stroke="#c8602a" stroke-width="1.2" marker-end="url(#arr)"/>
+        <line x1="184" y1="92" x2="184" y2="158" stroke="#2a7c7c" stroke-width="1.2" marker-end="url(#arr-teal)"/>
+        <line x1="282" y1="92" x2="282" y2="158" stroke="#b8921a" stroke-width="1.2" marker-end="url(#arr)"/>
+        <line x1="380" y1="92" x2="380" y2="158" stroke="#7c2a6a" stroke-width="1.2" marker-end="url(#arr)"/>
+        <line x1="478" y1="92" x2="478" y2="158" stroke="#2a5c7c" stroke-width="1.2" marker-end="url(#arr)"/>
+        <line x1="581" y1="92" x2="581" y2="158" stroke="#3a7c2a" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- Convergence lines to Fusion -->
+        <line x1="86" y1="204" x2="86" y2="240" stroke="#c8602a" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="184" y1="204" x2="184" y2="240" stroke="#2a7c7c" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="282" y1="204" x2="282" y2="240" stroke="#b8921a" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="380" y1="204" x2="380" y2="240" stroke="#7c2a6a" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="478" y1="204" x2="478" y2="240" stroke="#2a5c7c" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="581" y1="204" x2="381" y2="240" stroke="#3a7c2a" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+        <!-- Layer 3: Fusion Engine -->
+        <rect x="220" y="240" width="320" height="60" rx="8" fill="url(#gAccent)"/>
+        <text x="380" y="263" font-size="12" fill="white" text-anchor="middle" font-weight="500">⚡ Multimodal Fusion Engine</text>
+        <text x="380" y="284" font-size="10" fill="rgba(255,255,255,0.85)" text-anchor="middle">Cross-Modal Attention · Contrastive Learning · Late Fusion</text>
+
+        <!-- Layer 4: Shared Representation -->
+        <line x1="380" y1="300" x2="380" y2="330" stroke="#c8602a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <rect x="180" y="330" width="400" height="52" rx="6" fill="url(#gTeal)"/>
+        <text x="380" y="351" font-size="11" fill="white" text-anchor="middle" font-weight="500">🧠 Joint Embedding Space</text>
+        <text x="380" y="371" font-size="10" fill="rgba(255,255,255,0.85)" text-anchor="middle">Shared vector representations across all modalities</text>
+
+        <!-- Layer 5: Tasks -->
+        <line x1="380" y1="382" x2="380" y2="408" stroke="#2a7c7c" stroke-width="1.5" marker-end="url(#arr-teal)"/>
+
+        <!-- Task nodes -->
+        <rect x="46" y="408" width="118" height="44" rx="5" fill="white" stroke="#c8602a" stroke-width="1.2"/>
+        <text x="105" y="426" font-size="10" fill="#c8602a" text-anchor="middle" font-weight="500">🔍 Classification</text>
+        <text x="105" y="442" font-size="9" fill="#7a6f62" text-anchor="middle">Sentiment · Diagnosis</text>
+
+        <rect x="176" y="408" width="118" height="44" rx="5" fill="white" stroke="#2a7c7c" stroke-width="1.2"/>
+        <text x="235" y="426" font-size="10" fill="#2a7c7c" text-anchor="middle" font-weight="500">📈 Prediction</text>
+        <text x="235" y="442" font-size="9" fill="#7a6f62" text-anchor="middle">Forecasting · Regression</text>
+
+        <rect x="306" y="408" width="118" height="44" rx="5" fill="white" stroke="#b8921a" stroke-width="1.2"/>
+        <text x="365" y="426" font-size="10" fill="#b8921a" text-anchor="middle" font-weight="500">🔗 Retrieval</text>
+        <text x="365" y="442" font-size="9" fill="#7a6f62" text-anchor="middle">Cross-modal search</text>
+
+        <rect x="436" y="408" width="118" height="44" rx="5" fill="white" stroke="#7c2a6a" stroke-width="1.2"/>
+        <text x="495" y="426" font-size="10" fill="#7c2a6a" text-anchor="middle" font-weight="500">🧩 Generation</text>
+        <text x="495" y="442" font-size="9" fill="#7a6f62" text-anchor="middle">Image captioning · VQA</text>
+
+        <rect x="566" y="408" width="118" height="44" rx="5" fill="white" stroke="#3a7c2a" stroke-width="1.2"/>
+        <text x="625" y="426" font-size="10" fill="#3a7c2a" text-anchor="middle" font-weight="500">🔎 Clustering</text>
+        <text x="625" y="442" font-size="9" fill="#7a6f62" text-anchor="middle">Anomaly detection</text>
+
+        <!-- Lines from embedding to tasks -->
+        <line x1="380" y1="382" x2="105" y2="408" stroke="#c8602a" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="380" y1="382" x2="235" y2="408" stroke="#2a7c7c" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="380" y1="382" x2="365" y2="408" stroke="#b8921a" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="380" y1="382" x2="495" y2="408" stroke="#7c2a6a" stroke-width="0.8" stroke-dasharray="4,3"/>
+        <line x1="380" y1="382" x2="625" y2="408" stroke="#3a7c2a" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+        <!-- Layer label bottom -->
+        <text x="390" y="470" font-size="9" fill="#7a6f62" text-anchor="middle" letter-spacing="1.5" font-family="'Space Mono',monospace">LAYER 5 · DOWNSTREAM MINING TASKS</text>
+      </svg>
+    </div>
+
+    <p>The key architectural insight is the <strong>Joint Embedding Space</strong> — a shared high-dimensional vector representation where all modalities coexist. A text description of a tumour and a histology scan of the same tumour should have similar representations in this space. This shared geometry makes cross-modal reasoning possible.</p>
+  </section>
+
+  <!-- PART 04: FUSION STRATEGIES -->
+  <div class="part-marker reveal"><span class="part-num">Part 04</span><div class="part-line"></div></div>
+
+  <section id="fusion">
+    <h2>Fusion Strategies — How Modalities Are Combined</h2>
+    <p>The most critical design decision in any multimodal system is <em>when</em> and <em>how</em> to combine information from different modalities. Three dominant strategies have emerged, each with distinct trade-offs.</p>
+
+    <div class="fusion-grid reveal">
+      <div class="fusion-cell">
+        <span class="fusion-num">01</span>
+        <div class="fusion-title">Early Fusion</div>
+        <div class="fusion-desc">Raw features from all modalities are concatenated before any model training. Simple and fast, but destroys modality-specific structure. Best when modalities are tightly coupled and low-dimensional.</div>
+      </div>
+      <div class="fusion-cell">
+        <span class="fusion-num">02</span>
+        <div class="fusion-title">Late Fusion</div>
+        <div class="fusion-desc">Each modality is processed independently by its own model; predictions are merged at the decision layer (voting, averaging, stacking). More robust, easier to debug, but misses cross-modal interactions during learning.</div>
+      </div>
+      <div class="fusion-cell">
+        <span class="fusion-num">03</span>
+        <div class="fusion-title">Intermediate / Cross-Modal Attention</div>
+        <div class="fusion-desc">Modalities interact at intermediate representation levels using attention mechanisms (Transformer cross-attention). This is the dominant approach in CLIP, Flamingo, and GPT-4V — powerful but computationally expensive.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-gold">
+      <div class="callout-label">Modern Approach — Contrastive Learning</div>
+      <p style="margin:0;font-size:15px;"><strong>CLIP-style contrastive learning</strong> has revolutionised multimodal fusion: paired data (image + caption) is used to train encoders that push matching pairs together and non-matching pairs apart in embedding space — without explicit fusion layers. This produces remarkably generalizable joint representations with zero-shot cross-modal retrieval capabilities.</p>
+    </div>
+  </section>
+
+  <!-- PART 05: PIPELINE DIAGRAM -->
+  <div class="part-marker reveal"><span class="part-num">Part 05</span><div class="part-line"></div></div>
+
+  <section id="pipeline">
+    <h2>End-to-End Mining Pipeline</h2>
+    <p>From raw heterogeneous data to actionable insight — the multimodal mining pipeline spans six distinct stages, each with its own failure modes and quality gates.</p>
+
+    <!-- PIPELINE DIAGRAM SVG -->
+    <div class="arch-svg-wrap reveal">
+      <div class="diagram-title">— End-to-End Multimodal Mining Pipeline —</div>
+      <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" font-family="'DM Sans', sans-serif">
+        <defs>
+          <marker id="parr" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#c8602a"/>
+          </marker>
+          <linearGradient id="pg1" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#c8602a"/>
+            <stop offset="100%" stop-color="#e8845a"/>
+          </linearGradient>
+          <linearGradient id="pg2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#2a7c7c"/>
+            <stop offset="100%" stop-color="#4aa8a8"/>
+          </linearGradient>
+          <linearGradient id="pg3" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#b8921a"/>
+            <stop offset="100%" stop-color="#d4b050"/>
+          </linearGradient>
+          <linearGradient id="pg4" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#7c2a6a"/>
+            <stop offset="100%" stop-color="#a05090"/>
+          </linearGradient>
+          <linearGradient id="pg5" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#2a5c7c"/>
+            <stop offset="100%" stop-color="#4a80a8"/>
+          </linearGradient>
+          <linearGradient id="pg6" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#3a7c2a"/>
+            <stop offset="100%" stop-color="#60a850"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Stage boxes -->
+        <!-- 1 -->
+        <rect x="12" y="50" width="106" height="100" rx="8" fill="url(#pg1)"/>
+        <text x="65" y="82" font-size="20" text-anchor="middle">📥</text>
+        <text x="65" y="102" font-size="10.5" fill="white" text-anchor="middle" font-weight="600">Ingest</text>
+        <text x="65" y="118" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Kafka · Fivetran</text>
+        <text x="65" y="133" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Airbyte · APIs</text>
+
+        <!-- Arrow 1→2 -->
+        <line x1="118" y1="100" x2="133" y2="100" stroke="#c8602a" stroke-width="1.5" marker-end="url(#parr)"/>
+
+        <!-- 2 -->
+        <rect x="133" y="50" width="106" height="100" rx="8" fill="url(#pg2)"/>
+        <text x="186" y="82" font-size="20" text-anchor="middle">🧹</text>
+        <text x="186" y="102" font-size="10.5" fill="white" text-anchor="middle" font-weight="600">Preprocess</text>
+        <text x="186" y="118" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Tokenise · Resize</text>
+        <text x="186" y="133" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Normalise · Align</text>
+
+        <!-- Arrow 2→3 -->
+        <line x1="239" y1="100" x2="254" y2="100" stroke="#2a7c7c" stroke-width="1.5" marker-end="url(#parr)"/>
+
+        <!-- 3 -->
+        <rect x="254" y="50" width="106" height="100" rx="8" fill="url(#pg3)"/>
+        <text x="307" y="82" font-size="20" text-anchor="middle">🔬</text>
+        <text x="307" y="102" font-size="10.5" fill="white" text-anchor="middle" font-weight="600">Encode</text>
+        <text x="307" y="118" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">BERT · ViT · GNN</text>
+        <text x="307" y="133" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">wav2vec · CNN</text>
+
+        <!-- Arrow 3→4 -->
+        <line x1="360" y1="100" x2="375" y2="100" stroke="#b8921a" stroke-width="1.5" marker-end="url(#parr)"/>
+
+        <!-- 4 -->
+        <rect x="375" y="50" width="106" height="100" rx="8" fill="url(#pg4)"/>
+        <text x="428" y="82" font-size="20" text-anchor="middle">⚡</text>
+        <text x="428" y="102" font-size="10.5" fill="white" text-anchor="middle" font-weight="600">Fuse</text>
+        <text x="428" y="118" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Cross-Attention</text>
+        <text x="428" y="133" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Contrastive Loss</text>
+
+        <!-- Arrow 4→5 -->
+        <line x1="481" y1="100" x2="496" y2="100" stroke="#7c2a6a" stroke-width="1.5" marker-end="url(#parr)"/>
+
+        <!-- 5 -->
+        <rect x="496" y="50" width="106" height="100" rx="8" fill="url(#pg5)"/>
+        <text x="549" y="82" font-size="20" text-anchor="middle">🎯</text>
+        <text x="549" y="102" font-size="10.5" fill="white" text-anchor="middle" font-weight="600">Mine / Predict</text>
+        <text x="549" y="118" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Classify · Cluster</text>
+        <text x="549" y="133" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Retrieve · Generate</text>
+
+        <!-- Arrow 5→6 -->
+        <line x1="602" y1="100" x2="617" y2="100" stroke="#2a5c7c" stroke-width="1.5" marker-end="url(#parr)"/>
+
+        <!-- 6 -->
+        <rect x="617" y="50" width="123" height="100" rx="8" fill="url(#pg6)"/>
+        <text x="678" y="82" font-size="20" text-anchor="middle">📡</text>
+        <text x="678" y="102" font-size="10.5" fill="white" text-anchor="middle" font-weight="600">Monitor &amp; Retrain</text>
+        <text x="678" y="118" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Evidently · Arize</text>
+        <text x="678" y="133" font-size="9" fill="rgba(255,255,255,0.8)" text-anchor="middle">Drift alerts · CI/CD</text>
+
+        <!-- Feedback loop arrow -->
+        <path d="M 680 150 Q 680 175 380 175 Q 80 175 80 150" stroke="#c8602a" stroke-width="1.2" fill="none" stroke-dasharray="5,4" marker-end="url(#parr)"/>
+        <text x="380" y="192" font-size="9" fill="#c8602a" text-anchor="middle" letter-spacing="1.5" font-family="'Space Mono',monospace">CONTINUOUS FEEDBACK LOOP</text>
+      </svg>
+    </div>
+
+    <h3>Stage-by-Stage Breakdown</h3>
+    <p><strong>1. Ingest:</strong> Raw multimodal data arrives from diverse sources — video streams via Kafka, tabular EHR records via Fivetran, documents via API crawlers. The ingestion layer must handle vastly different data volumes, velocities, and schemas simultaneously.</p>
+    <p><strong>2. Preprocess:</strong> Each modality requires modality-specific cleaning. Text is tokenised and lowercased; images are resized and normalised to [-1, 1]; audio is converted to mel spectrograms. Critically, temporal alignment across modalities (matching video frames to audio timestamps to subtitles) happens here.</p>
+    <p><strong>3. Encode:</strong> Pre-trained encoders transform each modality into a fixed-dimensional embedding. Transfer learning from foundation models (CLIP, BERT, Whisper) dramatically reduces the labelled data requirement for downstream tasks.</p>
+    <p><strong>4. Fuse:</strong> The most research-intensive stage. Modern systems use cross-modal transformer attention, allowing text tokens to attend to image patches and vice versa. Contrastive objectives (InfoNCE loss) align semantically equivalent cross-modal pairs.</p>
+    <p><strong>5. Mine / Predict:</strong> The joint representation is used for the downstream task — classification, clustering, retrieval, or generation. This stage is where the actual "mining" occurs: discovering latent patterns that span multiple data types.</p>
+    <p><strong>6. Monitor & Retrain:</strong> Production multimodal systems drift along all modality dimensions simultaneously. A healthcare model can degrade because imaging hardware changes, documentation practices shift, or new patient demographics emerge — each an independent drift vector.</p>
+  </section>
+
+  <!-- PART 06: USE CASES -->
+  <div class="part-marker reveal"><span class="part-num">Part 06</span><div class="part-line"></div></div>
+
+  <section id="usecases">
+    <h2>Real-World Use Cases — Where Multimodal Mining Shines</h2>
+
+    <ul class="usecase-list">
+      <li>
+        <div class="usecase-icon uc-medical">🏥</div>
+        <div class="usecase-body">
+          <strong>Medical Diagnosis & Pathology</strong>
+          <p>Systems like Google's Med-PaLM 2 and Microsoft's BioViL fuse radiology images with clinical notes and lab values. Studies show a 15–23% accuracy improvement over image-only diagnosis for rare disease detection. Chest X-rays + EHR notes + genomics data together dramatically outperform any single modality for ICU mortality prediction.</p>
+        </div>
+      </li>
+      <li>
+        <div class="usecase-icon uc-finance">📈</div>
+        <div class="usecase-body">
+          <strong>Financial Intelligence & Risk</strong>
+          <p>Hedge funds mine earnings call transcripts (audio + text) combined with SEC filings and market microstructure data. Sentiment extracted from CEO tone-of-voice features (audio prosody) adds predictive signal beyond the words themselves. Fraud detection systems fuse transaction graphs with document images (receipts) and behavioural logs.</p>
+        </div>
+      </li>
+      <li>
+        <div class="usecase-icon uc-media">🎬</div>
+        <div class="usecase-body">
+          <strong>Media Intelligence & Content Moderation</strong>
+          <p>Platforms like YouTube and TikTok deploy multimodal classifiers that analyse video frames, audio, captions, and engagement graphs together. Text-only systems miss memes that encode harmful intent entirely in image-text combinations invisible to either modality alone.</p>
+        </div>
+      </li>
+      <li>
+        <div class="usecase-icon uc-science">🔬</div>
+        <div class="usecase-body">
+          <strong>Scientific Discovery</strong>
+          <p>AlphaFold's successor systems combine protein sequence data with 3D structural images and evolutionary graph data to predict molecular interactions. Drug discovery pipelines mine molecular graphs + clinical trial text + genomic arrays to identify novel therapeutic targets orders of magnitude faster than wet-lab approaches.</p>
+        </div>
+      </li>
+      <li>
+        <div class="usecase-icon uc-auto">🚗</div>
+        <div class="usecase-body">
+          <strong>Autonomous Systems & Robotics</strong>
+          <p>Tesla's FSD system, Waymo's LIDAR stacks, and Boston Dynamics' robots all fundamentally depend on multimodal fusion — camera images, LIDAR point clouds, radar reflections, and IMU sensor streams must be mined simultaneously to reconstruct a coherent world model for safe navigation.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- PART 07: CHALLENGES -->
+  <div class="part-marker reveal"><span class="part-num">Part 07</span><div class="part-line"></div></div>
+
+  <section id="challenges">
+    <h2>The Hard Problems — Challenges You Must Anticipate</h2>
+
+    <div class="bp-grid reveal">
+      <div class="bp-card">
+        <span class="bp-icon">🔗</span>
+        <div class="bp-title">Modality Alignment & Synchronisation</div>
+        <div class="bp-text">Pairing data across modalities is non-trivial. A clinical note written three days after an imaging scan is not synchronised with it — yet both describe the same patient state. Temporal alignment, spatial co-registration, and semantic linking are active research problems.</div>
+      </div>
+      <div class="bp-card">
+        <span class="bp-icon">🕳️</span>
+        <div class="bp-title">Missing Modality Problem</div>
+        <div class="bp-text">In real deployments, some modalities are frequently absent — a patient arrives without prior imaging, or an audio recording is corrupted. Robust multimodal systems must degrade gracefully when modalities are missing, rather than failing catastrophically.</div>
+      </div>
+      <div class="bp-card">
+        <span class="bp-icon">⚖️</span>
+        <div class="bp-title">Modality Imbalance & Dominance</div>
+        <div class="bp-text">During training, high-capacity modalities (images, text) can dominate gradients, effectively silencing weaker modalities (audio, tabular). The model learns to ignore informative but low-variance signals. Gradient blending and modality-specific learning rates are partial mitigations.</div>
+      </div>
+      <div class="bp-card">
+        <span class="bp-icon">💾</span>
+        <div class="bp-title">Computational Scale</div>
+        <div class="bp-text">Training a cross-modal attention transformer on video + text + audio at scale requires enormous GPU memory and compute. The quadratic attention complexity over multi-modal token sequences is a fundamental bottleneck. Sparse attention, Perceiver IO, and state-space models (Mamba) are emerging solutions.</div>
+      </div>
+      <div class="bp-card">
+        <span class="bp-icon">🔍</span>
+        <div class="bp-title">Interpretability & Explainability</div>
+        <div class="bp-text">Which modality drove this prediction? When a multimodal medical AI flags a tumour, can it explain whether the decision was driven by the imaging or the clinical text? SHAP-based modality attribution and cross-modal attention visualisation are early-stage tools for this problem.</div>
+      </div>
+      <div class="bp-card">
+        <span class="bp-icon">🏷️</span>
+        <div class="bp-title">Labelled Data Scarcity</div>
+        <div class="bp-text">Labelling multimodal data is exponentially more expensive than labelling single-modality data — requiring domain experts to annotate across multiple simultaneous channels. Weak supervision, self-supervised pretraining (CLIP, MAE), and data augmentation are critical for data-efficient learning.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART 08: FUTURE -->
+  <div class="part-marker reveal"><span class="part-num">Part 08</span><div class="part-line"></div></div>
+
+  <section id="future">
+    <h2>The Future — What's Coming Next</h2>
+
+    <div class="trends-row reveal">
+      <div class="trend-card">
+        <span class="trend-icon">🌐</span>
+        <div class="trend-title">Omnimodal Foundation Models</div>
+        <div class="trend-text">GPT-4o and Gemini Ultra point toward truly universal models — single architectures that natively process and generate across text, images, audio, and video in a unified token stream. Mining will shift from pipeline assembly to prompt engineering over universal representations.</div>
+      </div>
+      <div class="trend-card">
+        <span class="trend-icon">🧬</span>
+        <div class="trend-title">Scientific Multimodal AI</div>
+        <div class="trend-text">Convergence of genomic sequences, protein graphs, molecular images, and clinical trial text will power a new generation of AI-driven drug discovery and personalised medicine — the most consequential application of multimodal mining this decade.</div>
+      </div>
+      <div class="trend-card">
+        <span class="trend-icon">⚡</span>
+        <div class="trend-title">Real-Time Multimodal Streams</div>
+        <div class="trend-text">Edge deployments (autonomous vehicles, smart cities) require multimodal fusion at millisecond latency. Neuromorphic hardware, quantised transformer inference, and hardware-software co-design will bring production-grade multimodal mining to the edge.</div>
+      </div>
+      <div class="trend-card">
+        <span class="trend-icon">🔐</span>
+        <div class="trend-title">Privacy-Preserving Multimodal Mining</div>
+        <div class="trend-text">Federated learning across modality silos (hospitals sharing imaging embeddings without raw scans) and differential privacy guarantees for multimodal datasets are becoming regulatory necessities — especially in healthcare and finance.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NUMERICAL EXAMPLE -->
+  <div class="part-marker reveal"><span class="part-num">Worked Example</span><div class="part-line"></div></div>
+
+  <section id="numerical">
+    <h2>Numerical Example — Cross-Modal Cosine Similarity</h2>
+    <p class="lead">How do we measure whether a text description and an image actually "match" in the joint embedding space? The answer is <strong>cosine similarity</strong> — the most widely used metric for cross-modal retrieval in systems like CLIP.</p>
+
+    <div class="callout callout-teal">
+      <div class="callout-label">Scenario</div>
+      <p style="margin:0;font-size:15px;">A multimodal medical system encodes a <strong>radiology report (text)</strong> and a <strong>chest X-ray image</strong> into the same 4-dimensional embedding space. We want to measure how similar they are — i.e., do they describe the same patient finding?</p>
+    </div>
+
+    <!-- STEP 1 -->
+    <div style="background:#f3efe6;border:1px solid #d8d0c4;border-radius:10px;padding:28px 24px;margin:28px 0;">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.2em;color:#7a6f62;text-transform:uppercase;margin-bottom:18px;">Step 1 · Input Embeddings (4-dimensional vectors)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:linear-gradient(135deg,#c8602a,#e8845a);border-radius:8px;padding:18px 20px;color:white;">
+          <div style="font-size:11px;letter-spacing:0.15em;opacity:0.85;margin-bottom:8px;font-family:'Space Mono',monospace;">📝 TEXT EMBEDDING — T</div>
+          <div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;letter-spacing:0.05em;">[ 0.6, 0.8, 0.3, 0.5 ]</div>
+          <div style="font-size:12px;opacity:0.8;margin-top:6px;">Encoded by BERT from radiology report</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#2a7c7c,#4aa8a8);border-radius:8px;padding:18px 20px;color:white;">
+          <div style="font-size:11px;letter-spacing:0.15em;opacity:0.85;margin-bottom:8px;font-family:'Space Mono',monospace;">🖼️ IMAGE EMBEDDING — I</div>
+          <div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;letter-spacing:0.05em;">[ 0.4, 0.9, 0.2, 0.7 ]</div>
+          <div style="font-size:12px;opacity:0.8;margin-top:6px;">Encoded by ViT from chest X-ray</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div style="background:#fff8f5;border:1px solid #e8c4b0;border-radius:10px;padding:28px 24px;margin:20px 0;">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.2em;color:#c8602a;text-transform:uppercase;margin-bottom:18px;">Step 2 · Dot Product — T · I</div>
+      <div style="font-family:'Space Mono',monospace;font-size:14px;color:#3a342c;margin-bottom:18px;">T · I = (t₁×i₁) + (t₂×i₂) + (t₃×i₃) + (t₄×i₄)</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+        <div style="background:#f9ece4;border-radius:6px;padding:12px;text-align:center;border:1px solid #e8c4b0;">
+          <div style="font-size:11px;color:#7a6f62;font-family:'Space Mono',monospace;">0.6 × 0.4</div>
+          <div style="font-size:1.2rem;font-weight:700;color:#c8602a;font-family:'Space Mono',monospace;margin-top:4px;">0.24</div>
+        </div>
+        <div style="background:#f9ece4;border-radius:6px;padding:12px;text-align:center;border:1px solid #e8c4b0;">
+          <div style="font-size:11px;color:#7a6f62;font-family:'Space Mono',monospace;">0.8 × 0.9</div>
+          <div style="font-size:1.2rem;font-weight:700;color:#c8602a;font-family:'Space Mono',monospace;margin-top:4px;">0.72</div>
+        </div>
+        <div style="background:#f9ece4;border-radius:6px;padding:12px;text-align:center;border:1px solid #e8c4b0;">
+          <div style="font-size:11px;color:#7a6f62;font-family:'Space Mono',monospace;">0.3 × 0.2</div>
+          <div style="font-size:1.2rem;font-weight:700;color:#c8602a;font-family:'Space Mono',monospace;margin-top:4px;">0.06</div>
+        </div>
+        <div style="background:#f9ece4;border-radius:6px;padding:12px;text-align:center;border:1px solid #e8c4b0;">
+          <div style="font-size:11px;color:#7a6f62;font-family:'Space Mono',monospace;">0.5 × 0.7</div>
+          <div style="font-size:1.2rem;font-weight:700;color:#c8602a;font-family:'Space Mono',monospace;margin-top:4px;">0.35</div>
+        </div>
+      </div>
+      <div style="background:#c8602a;border-radius:8px;padding:14px 20px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:13px;color:rgba(255,255,255,0.85);font-family:'Space Mono',monospace;">0.24 + 0.72 + 0.06 + 0.35 =</span>
+        <span style="font-size:1.5rem;font-weight:700;color:white;font-family:'Space Mono',monospace;">1.37</span>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div style="background:#e4f4f4;border:1px solid #b0d8d8;border-radius:10px;padding:28px 24px;margin:20px 0;">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.2em;color:#2a7c7c;text-transform:uppercase;margin-bottom:18px;">Step 3 · Magnitudes — ‖T‖ and ‖I‖</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:white;border-radius:8px;padding:16px 18px;border:1px solid #b0d8d8;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#2a7c7c;margin-bottom:6px;font-weight:700;">‖T‖ (Text magnitude)</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#3a342c;line-height:1.9;">
+            = √(0.6² + 0.8² + 0.3² + 0.5²)<br>
+            = √(0.36 + 0.64 + 0.09 + 0.25)<br>
+            = √1.34<br>
+            <span style="color:#2a7c7c;font-weight:700;font-size:14px;">≈ 1.158</span>
+          </div>
+        </div>
+        <div style="background:white;border-radius:8px;padding:16px 18px;border:1px solid #b0d8d8;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#2a7c7c;margin-bottom:6px;font-weight:700;">‖I‖ (Image magnitude)</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:#3a342c;line-height:1.9;">
+            = √(0.4² + 0.9² + 0.2² + 0.7²)<br>
+            = √(0.16 + 0.81 + 0.04 + 0.49)<br>
+            = √1.50<br>
+            <span style="color:#2a7c7c;font-weight:700;font-size:14px;">≈ 1.225</span>
+          </div>
+        </div>
+      </div>
+      <div style="background:#2a7c7c;border-radius:8px;padding:14px 20px;margin-top:14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:13px;color:rgba(255,255,255,0.85);font-family:'Space Mono',monospace;">‖T‖ × ‖I‖  =  1.158 × 1.225  =</span>
+        <span style="font-size:1.5rem;font-weight:700;color:white;font-family:'Space Mono',monospace;">1.419</span>
+      </div>
+    </div>
+
+    <!-- STEP 4 FINAL ANSWER -->
+    <div style="background:linear-gradient(135deg,#b8921a,#d4b050);border-radius:10px;padding:32px 28px;margin:20px 0;text-align:center;color:white;">
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.25em;opacity:0.85;text-transform:uppercase;margin-bottom:16px;">Step 4 · Final Result — Cosine Similarity</div>
+      <div style="font-family:'Space Mono',monospace;font-size:1rem;opacity:0.9;margin-bottom:10px;">cos(θ) = T · I / (‖T‖ × ‖I‖) = 1.37 / 1.419</div>
+      <div style="font-size:3.5rem;font-weight:300;font-family:'Cormorant Garamond',serif;letter-spacing:0.05em;line-height:1;">0.965</div>
+      <div style="font-size:13px;opacity:0.85;margin-top:10px;">Range: –1 (opposite) → 0 (unrelated) → +1 (identical)</div>
+    </div>
+
+    <!-- Interpretation table -->
+    <h3>Interpreting the Score</h3>
+    <div style="border:1px solid #d8d0c4;border-radius:10px;overflow:hidden;margin:20px 0;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 2fr;background:#1a1612;color:white;padding:12px 18px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;">
+        <span>Score Range</span><span>Label</span><span>Meaning</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 2fr;padding:14px 18px;border-bottom:1px solid #d8d0c4;align-items:center;">
+        <span style="font-family:'Space Mono',monospace;font-weight:700;color:#e53e3e;">0.0 – 0.4</span>
+        <span style="font-size:13px;">Low</span>
+        <span style="font-size:13px;color:#7a6f62;">Image and text describe entirely different things. Not a match.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 2fr;padding:14px 18px;border-bottom:1px solid #d8d0c4;background:#faf8f4;align-items:center;">
+        <span style="font-family:'Space Mono',monospace;font-weight:700;color:#b8921a;">0.4 – 0.75</span>
+        <span style="font-size:13px;">Moderate</span>
+        <span style="font-size:13px;color:#7a6f62;">Partial overlap in semantics. Weak cross-modal alignment.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 2fr;padding:14px 18px;background:#f0fdf4;align-items:center;">
+        <span style="font-family:'Space Mono',monospace;font-weight:700;color:#3a7c2a;">0.75 – 1.0</span>
+        <span style="font-size:13px;">High ✅</span>
+        <span style="font-size:13px;color:#7a6f62;"><strong>Our score 0.965 is here.</strong> X-ray and report are strongly aligned — same clinical finding confirmed.</span>
+      </div>
+    </div>
+
+    <div class="callout callout-gold">
+      <div class="callout-label">Why Cosine, Not Euclidean Distance?</div>
+      <p style="margin:0;font-size:15px;">Euclidean distance measures how far apart two points are — but embeddings from different modalities can have very different magnitudes. Cosine similarity measures only the <strong>angle between vectors</strong>, ignoring magnitude entirely. This makes it robust across modalities where scale differs greatly, which is why CLIP, ALIGN, and virtually every cross-modal retrieval system uses it.</p>
+    </div>
+  </section>
+
+
+  <!-- PULL QUOTE -->
+  <div class="pull-quote">
+    <p>"The richest signals in the world are not in any single modality — they live in the space <em>between</em> them, in the correlations that no single sensor alone can see."</p>
+    <cite>— The Core Thesis of Multimodal Data Mining</cite>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="part-marker reveal"><span class="part-num">Summary</span><div class="part-line"></div></div>
+
+  <section>
+    <h2>Five Things to Remember</h2>
+    <ul class="takeaway-list">
+      <li>
+        <span class="takeaway-num">1</span>
+        <span class="takeaway-text">Multimodal Data Mining extracts knowledge from the <strong>intersections between data types</strong> — patterns impossible to discover from any single modality alone. The fusion gap is where the real intelligence lives.</span>
+      </li>
+      <li>
+        <span class="takeaway-num">2</span>
+        <span class="takeaway-text">The three fusion strategies — early, late, and intermediate cross-modal attention — each serve different trade-offs of expressiveness vs. computational cost. Modern foundation models favour intermediate cross-attention with contrastive pretraining.</span>
+      </li>
+      <li>
+        <span class="takeaway-num">3</span>
+        <span class="takeaway-text">The <strong>missing modality problem</strong> is the most underestimated production challenge. Systems that fail when any one input is absent are fragile by design. Robustness to partial modality availability must be engineered from day one.</span>
+      </li>
+      <li>
+        <span class="takeaway-num">4</span>
+        <span class="takeaway-text">Real-world impact is highest in domains where human experts naturally integrate multiple information streams — medicine, finance, autonomous navigation, and scientific discovery. Multimodal mining augments the integrative capacity that defines expert judgment.</span>
+      </li>
+      <li>
+        <span class="takeaway-num">5</span>
+        <span class="takeaway-text">The field is accelerating toward <strong>omnimodal foundation models</strong> that process any combination of modalities in a single unified architecture — collapsing the pipeline complexity of today's systems into prompt-based interfaces over universal representations.</span>
+      </li>
+    </ul>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-title">Multimodal Data Mining — When AI Learns to See, Hear & Read</div>
+  <div class="footer-meta">Data Warehousing & Mining · April 2026 · All Rights Reserved</div>
+  <div class="footer-meta" style="margin-top:12px; font-size:11px; color:#5a5048;">Written as part of academic coursework · CSE · Data Warehousing & Mining</div>
+</footer>
+
+<script>
+  // Progress bar
+  const bar = document.getElementById('progress-bar');
+  window.addEventListener('scroll', () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (window.scrollY / max * 100) + '%';
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
